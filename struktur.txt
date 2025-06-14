@@ -1,0 +1,10 @@
+/project_root
+│
+├── bot/
+│   └── telegram_bot.py       ← бот, читает и отправляет голосовые
+│
+├── server/
+│   └── app.py                ← Flask-сервер для приёма голосовых
+│
+├── messages.db               ← SQLite база
+└── requirements.txt          ← зависимости

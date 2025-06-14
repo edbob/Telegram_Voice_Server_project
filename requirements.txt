@@ -1,0 +1,6 @@
+telethon
+gtts
+langdetect
+emoji
+pygame
+flask
