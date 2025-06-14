@@ -3,3 +3,7 @@
 __pycache__/
 *.pyc
 uploads/
+bot_session.session
+__pycache__/
+messages.db
+bot_session.session
