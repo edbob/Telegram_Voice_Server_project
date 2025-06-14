@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Голосовые сообщения</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; }
+        .msg { margin-bottom: 20px; }
+        .date { color: gray; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <h1>🗣️ Последние голосовые сообщения</h1>
+    <div id="messages"></div>
+
+    <script>
+    async function fetchMessages() {
+        const res = await fetch('/api/messages');
+        const data = await res.json();
+
+        const container = document.getElementById('messages');
+        container.innerHTML = '';
+
+        data.forEach(msg => {
+            const div = document.createElement('div');
+            div.className = 'msg';
+            div.innerHTML = `
+                <audio controls src="${msg.url}"></audio><br>
+                <span class="date">Добавлено: ${msg.date}</span>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    // Подписка на события от сервера
+    const eventSource = new EventSource('/events');
+    eventSource.onmessage = function(event) {
+        if (event.data === 'new_message') {
+            fetchMessages();
+        }
+    };
+
+    // Первая загрузка
+    fetchMessages();
+</script>
+</body>
+</html>

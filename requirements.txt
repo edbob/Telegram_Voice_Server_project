@@ -4,3 +4,5 @@ langdetect
 emoji
 pygame
 flask
+requests
+time

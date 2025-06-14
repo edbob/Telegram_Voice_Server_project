@@ -1,5 +1,6 @@
 import os
 import asyncio
+import time
 from gtts import gTTS
 from telethon import TelegramClient, events
 from telethon.tl.types import PeerChannel
@@ -49,24 +50,41 @@ class TelegramVoiceBot:
         await self.client.run_until_disconnected()
 
     async def voice_worker(self):
+        import requests
+
         while True:
             clean_text, lang = await self.queue.get()
 
             tts = gTTS(text=clean_text, lang=lang, slow=False)
             mp3_path = "voice.mp3"
-            ogg_path = "voice.ogg"
+            ogg_path = f"voice_{int(time.time())}.ogg"
+
             tts.save(mp3_path)
-
+            # Конвертация
             os.system(f'ffmpeg -y -i {mp3_path} -c:a libopus {ogg_path}')
-
+            
+            # Проверка размера файла
+            if not os.path.exists(ogg_path) or os.path.getsize(ogg_path) == 0:
+                print("❌ Файл ogg не создан или пустой!")
+            else:
+                print(f"✅ Файл ogg создан: {ogg_path}, размер: {os.path.getsize(ogg_path)} байт")
+            
             try:
+                # Отправка в Telegram
                 await self.client.send_file(self.target_chat, ogg_path, voice_note=True)
-                print("Голосовое сообщение отправлено.")
+                print("Отправлено в Telegram")
+
+                # Отправка на сервер
+                with open(ogg_path, 'rb') as f:
+                    response = requests.post("http://localhost:5000/upload", files={'file': (ogg_path, f)})
+                    print(f"Ответ сервера: {response.text}")
+
             except Exception as e:
                 print(f"Ошибка отправки: {e}")
 
-            for f in (mp3_path, ogg_path):
-                if os.path.exists(f):
-                    os.remove(f)
+            finally:
+                for f in (mp3_path, ogg_path):
+                    if os.path.exists(f):
+                        os.remove(f)
 
             self.queue.task_done()

@@ -1,7 +1,10 @@
 import asyncio
+import requests
+
 from bot.bot_main import TelegramVoiceBot
 
 if __name__ == "__main__":
+    
     api_id = 27893983
     api_hash = '7333605e802b401937e72688aeaa1ea3'
     phone = '+380979493781'
@@ -21,5 +24,15 @@ if __name__ == "__main__":
         asyncio.run(bot.start())
     except KeyboardInterrupt:
         print("\nСкрипт остановлен.")
+    
+    try:
+        ogg_path = 'bot/voice.ogg'
+        # Отправка файла на сервер
+        with open(ogg_path, 'rb') as f:
+            response = requests.post("http://localhost:5000/upload", files={'file': f})
+            print(f"Загружено на сервер: {response.text}")
+    except Exception as e:
+        print(f"Ошибка отправки на сервер: {e}")
+        
 # для запуска скрипта используйте команду
 # python -m bot.telegram_bot
