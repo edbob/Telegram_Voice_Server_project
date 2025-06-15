@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, render_template, jsonify, send_from_directory
 import os
 import shutil
 from datetime import datetime
@@ -35,7 +35,8 @@ def get_messages():
         messages.append({
             'filename': f,
             'url': f'/static/voice/{f}',
-            'date': created
+            'date': created,
+            'source': 'Телеграм-канал XYZ'  # ← позже можно читать из базы
         })
 
     return jsonify(messages)
@@ -56,9 +57,6 @@ def sse():
 def notify_clients():
     for q in subscribers:
         q.put('new_message')
-
-
-
 
 @app.route('/upload', methods=['POST'])
 def upload_file():

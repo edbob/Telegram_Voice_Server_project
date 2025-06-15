@@ -3,17 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <title>Голосовые сообщения</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <style>
-        body { font-family: sans-serif; margin: 40px; }
-        .msg { margin-bottom: 20px; }
-        .date { color: gray; font-size: 0.9em; }
-    </style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f5f5f5;
+        padding: 20px;
+    }
+
+    .msg {
+        border: 2px solid;
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 10px;
+        background-color: white;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .date {
+        font-size: 0.9em;
+        color: #666;
+    }
+
+    #autoplay-toggle {
+        background-color: #4CAF50; /* зелёный как включено */
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-bottom: 15px;
+        transition: background-color 0.3s ease;
+    }
+
+    #autoplay-toggle:hover {
+        background-color: #45a049;
+    }
+
+    #autoplay-toggle.off {
+        background-color: #f44336; /* красный как выключено */
+    }
+
+    #autoplay-toggle.off:hover {
+        background-color: #d32f2f;
+    }
+</style>
+
 </head>
 <body>
     <h1>🗣️ Последние голосовые сообщения</h1>
+    <button id="autoplay-toggle">🔊 Автопрослушивание: ВКЛ</button>
     <div id="messages"></div>
 
-    <script>
+<script>
+    // Получаем статус автопрослушивания
+    function isAutoplayEnabled() {
+        return localStorage.getItem('autoplayEnabled') !== 'false'; // по умолчанию включено
+    }
+
+    function toggleAutoplay() {
+        const current = isAutoplayEnabled();
+        localStorage.setItem('autoplayEnabled', (!current).toString());
+        updateAutoplayButton();
+    }
+
+    function updateAutoplayButton() {
+    const btn = document.getElementById('autoplay-toggle');
+    const enabled = isAutoplayEnabled();
+    btn.textContent = enabled
+        ? '🔊 Автопрослушивание: ВКЛ'
+        : '🔇 Автопрослушивание: ВЫКЛ';
+
+        // Добавим/удалим класс для стилей
+        if (enabled) {
+            btn.classList.remove('off');
+        } else {
+            btn.classList.add('off');
+        }
+    }
+    // Работа с прочитанными
+    function getReadMessages() {
+        const stored = localStorage.getItem('readMessages');
+        return stored ? JSON.parse(stored) : [];
+    }
+
+    function markAsRead(filename) {
+        const read = getReadMessages();
+        if (!read.includes(filename)) {
+            read.push(filename);
+            localStorage.setItem('readMessages', JSON.stringify(read));
+        }
+    }
+
     async function fetchMessages() {
         const res = await fetch('/api/messages');
         const data = await res.json();
@@ -21,18 +103,43 @@
         const container = document.getElementById('messages');
         container.innerHTML = '';
 
-        data.forEach(msg => {
+        const readMessages = getReadMessages();
+
+        data.forEach((msg, index) => {
             const div = document.createElement('div');
             div.className = 'msg';
+
+            const isRead = readMessages.includes(msg.filename);
+            div.style.borderColor = isRead ? 'red' : 'green';
+
             div.innerHTML = `
                 <audio controls src="${msg.url}"></audio><br>
-                <span class="date">Добавлено: ${msg.date}</span>
+                <span class="date">Добавлено: ${msg.date} | Источник: ${msg.source || 'Неизвестно'}</span>
             `;
+
             container.appendChild(div);
+
+            const audio = div.querySelector('audio');
+
+            // Автоматическое воспроизведение и пометка
+            if (index === 0 && !isRead && isAutoplayEnabled()) {
+                audio.play().then(() => {
+                    markAsRead(msg.filename);
+                    div.style.borderColor = 'red';
+                }).catch(err => {
+                    console.warn("Не удалось воспроизвести:", err);
+                });
+            }
+
+            // При ручном воспроизведении — тоже помечаем как прочитанное
+            audio.addEventListener('play', () => {
+                markAsRead(msg.filename);
+                div.style.borderColor = 'red';
+            });
         });
     }
 
-    // Подписка на события от сервера
+    // SSE
     const eventSource = new EventSource('/events');
     eventSource.onmessage = function(event) {
         if (event.data === 'new_message') {
@@ -40,7 +147,11 @@
         }
     };
 
+    // Обработка кнопки
+    document.getElementById('autoplay-toggle').addEventListener('click', toggleAutoplay);
+
     // Первая загрузка
+    updateAutoplayButton();
     fetchMessages();
 </script>
 </body>

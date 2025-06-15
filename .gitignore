@@ -8,4 +8,4 @@ __pycache__/
 messages.db
 bot_session.session
 uploads/*
-static/voice/*
+server/static/voice/*
