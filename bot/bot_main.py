@@ -33,10 +33,25 @@ class TelegramVoiceBot:
             return
 
         @self.client.on(events.NewMessage(chats=entities))
+        # Обработка новых сообщений
         async def handler(event):
             msg = event.message
             print(f"\n[{msg.date}] {msg.sender_id}: {msg.text}")
-            self.db.save_message(msg.sender_id, msg.text, msg.date.isoformat())
+            
+            # Получаем источник — название группы/канала
+            try:
+                chat = await event.get_chat()
+                source = chat.title if hasattr(chat, 'title') else 'Неизвестно'
+            except:
+                source = 'Неизвестно'
+
+            # Сохраняем в базу
+            self.db.save_message(
+                sender_id=msg.sender_id,
+                message=msg.text, 
+                date=msg.date.isoformat(),
+                source=source
+            )
 
             clean_text = TextProcessor.clean(msg.text)
             if not clean_text.strip():
