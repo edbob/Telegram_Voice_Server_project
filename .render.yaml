@@ -14,6 +14,6 @@ services:
     name: telegram-voice-bot
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python3 start_all.py
+    startCommand: python -m bot.telegram_bot
     plan: free
     autoDeploy: true

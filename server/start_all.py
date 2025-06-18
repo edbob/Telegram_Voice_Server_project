@@ -4,7 +4,7 @@ import time
 
 # Запускаем telegram-бота в фоне
 print("Запуск telegram_bot.py...")
-bot_proc = subprocess.Popen(["python3", "bot/telegram_bot.py"])
+bot_proc = subprocess.Popen(["python3", "-m", "bot.telegram_bot"])
 
 # Подождём 3-5 секунд, чтобы бот успел подключиться
 time.sleep(5)
