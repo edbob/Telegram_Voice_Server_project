@@ -15,20 +15,6 @@ VOICE_FOLDER = os.path.join(app.root_path, 'static', 'voice')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(VOICE_FOLDER, exist_ok=True)
 
-def init_db():
-    import sqlite3
-    db_path = os.path.join(os.path.dirname(__file__), 'messages.db')
-    conn = sqlite3.connect(db_path)
-    c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            filename TEXT NOT NULL,
-            date TEXT NOT NULL,
-            source TEXT
-        )
-    ''')
-
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -116,6 +102,5 @@ def upload_file():
     return 'Файл получен', 200
 
 if __name__ == "__main__":
-    init_db()
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
