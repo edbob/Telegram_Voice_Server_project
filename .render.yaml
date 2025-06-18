@@ -2,14 +2,17 @@ services:
   - type: web
     name: telegram-voice-server
     env: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: ""
     startCommand: python server/app.py
+    plan: free
+    autoDeploy: true
     envVars:
       - key: PORT
         value: 10000
 
   - type: worker
-    name: telegram-voice-bot
+    name: telegram-bot
     env: python
-    buildCommand: pip install -r requirements.txt
     startCommand: python bot/telegram_bot.py
+    plan: free
+    autoDeploy: true
