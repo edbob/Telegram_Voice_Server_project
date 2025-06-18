@@ -9,3 +9,7 @@ messages.db
 bot_session.session
 uploads/*
 server/static/voice/*
+bot/messages.db
+bot_session.session-journal
+mobile/
+mobile/*

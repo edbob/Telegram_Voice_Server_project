@@ -89,6 +89,13 @@ eventSource.onmessage = function(event) {
     }
 };
 
+// PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/static/sw.js')
+    .then(() => console.log('Service Worker зарегистрирован'))
+    .catch(console.error);
+}
+
 // Обработка кнопки
 document.getElementById('autoplay-toggle').addEventListener('click', toggleAutoplay);
 
