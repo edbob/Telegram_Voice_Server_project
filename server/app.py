@@ -4,7 +4,7 @@ import shutil
 from datetime import datetime
 from flask import Response
 from queue import Queue
-import sqlite3
+from bot.db import MessageDB
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
@@ -19,47 +19,13 @@ os.makedirs(VOICE_FOLDER, exist_ok=True)
 def index():
     return render_template('index.html')
 
+db = MessageDB()
+
 @app.route('/api/messages')
 def get_messages():
-    files = os.listdir(VOICE_FOLDER)
-    files = [f for f in files if f.endswith('.ogg')]
-
-    # Сортировка файлов по дате создания — последние сверху
-    files = sorted(files, key=lambda f: os.path.getctime(os.path.join(VOICE_FOLDER, f)), reverse=True)
-
-    latest_files = files[:10]
-
-    # Подключаемся к базе
-    DB_PATH = os.path.join(app.root_path, '..', 'bot', 'messages.db')
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-
-    # Получаем последние 10 сообщений из базы (source, date)
-    c.execute('''
-        SELECT date, source FROM messages ORDER BY date DESC LIMIT 10
-    ''')
-    rows = c.fetchall()
-    conn.close()
-
-    messages = []
-
-    for i, f in enumerate(latest_files):
-        path = os.path.join(VOICE_FOLDER, f)
-        created = datetime.fromtimestamp(os.path.getctime(path)).strftime('%Y-%m-%d %H:%M:%S')
-
-        # Попробуем взять соответствующий source
-        if i < len(rows):
-            source = rows[i][1]
-        else:
-            source = "Неизвестно"
-
-        messages.append({
-            'filename': f,
-            'url': f'/static/voice/{f}',
-            'date': created,
-            'source': source
-        })
-
+    messages = db.get_latest_messages()
+    for msg in messages:
+        msg['url'] = f"/static/voice/{msg['filename']}"
     return jsonify(messages)
 
 subscribers = []
