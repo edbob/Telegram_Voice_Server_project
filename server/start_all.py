@@ -3,6 +3,9 @@ import asyncio
 from bot.bot_main import TelegramVoiceBot
 from server.app import app
 import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 def run_flask():
     port = int(os.environ.get("PORT", 5000))
