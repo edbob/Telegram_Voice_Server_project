@@ -25,7 +25,7 @@ db = MessageDB()
 def get_messages():
     messages = db.get_latest_messages()
     for msg in messages:
-        msg['url'] = f"/static/voice/{msg['filename']}"
+        msg['url'] = msg['filename']
     return jsonify(messages)
 
 subscribers = []
@@ -61,6 +61,16 @@ def upload_file():
     # Копируем в static/voice/
     static_path = os.path.join(VOICE_FOLDER, file.filename)
     shutil.copy(save_path, static_path)
+    
+    # Временные данные (в реальности бот должен передавать это через POST вместе с файлом)
+    sender_id = 0
+    message = '---'
+    date = datetime.now().isoformat()
+    source = 'Неизвестно'
+    filename = file.filename
+
+    db.save_message(sender_id, message, date, source, filename)
+
 
     print(f"✅ Загружено: {save_path}")
     print(f"📁 Скопировано в: {static_path}")

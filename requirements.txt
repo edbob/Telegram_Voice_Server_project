@@ -6,3 +6,4 @@ pygame
 flask
 requests
 psycopg2-binary
+cloudinary

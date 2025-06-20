@@ -1,3 +1,4 @@
+from email.mime import text
 import os
 import asyncio
 import time
@@ -6,6 +7,14 @@ from telethon import TelegramClient, events
 from telethon.tl.types import PeerChannel
 from bot.db import MessageDB
 from bot.processor import TextProcessor
+import cloudinary.uploader
+from bot.uploader import upload_audio_to_cloudinary
+
+cloudinary.config(
+    cloud_name=os.environ['CLOUDINARY_CLOUD_NAME'],
+    api_key=os.environ['CLOUDINARY_API_KEY'],
+    api_secret=os.environ['CLOUDINARY_API_SECRET']
+)
 
 class TelegramVoiceBot:
     def __init__(self, api_id, api_hash, phone, source_channels, db_file, target_chat):
@@ -73,30 +82,37 @@ async def voice_worker(self):
         tts = gTTS(text=clean_text, lang=lang, slow=False)
         mp3_path = "voice.mp3"
         ogg_path = f"voice_{int(time.time())}.ogg"
-
+        
+        # Конвертация
         tts.save(mp3_path)
         os.system(f'ffmpeg -y -i {mp3_path} -c:a libopus {ogg_path}')
 
         if not os.path.exists(ogg_path) or os.path.getsize(ogg_path) == 0:
-            print("❌ OGG не создан")
+            print("❌ Файл ogg не создан или пустой!")
         else:
+            print(f"✅ Файл ogg создан: {ogg_path}")
             try:
                 await self.client.send_file(self.target_chat, ogg_path, voice_note=True)
                 print("Отправлено в Telegram")
 
-                # ⬇ Отправка на сервер
-                with open(ogg_path, 'rb') as f:
-                    requests.post("http://localhost:5000/upload", files={'file': (ogg_path, f)})
+                # ⬇ Загружаем в Cloudinary
+                audio_url = upload_audio_to_cloudinary(ogg_path)
+                if not audio_url:
+                    print("❌ Не удалось загрузить в Cloudinary!")
+                    return
 
+                print(f"✅ Загрузилось в Cloudinary: {audio_url}")
+
+                
                 # ⬇ Сохраняем в БД
-                filename = ogg_path.split('/')[-1]
                 self.db.save_message(
                     sender_id=sender_id,
-                    message=clean_text,
-                    date=date,
+                    message=text,
+                    date=date.isoformat(),
                     source=source,
-                    filename=filename
+                    filename=audio_url  # передаём прямую ссылку!
                 )
+
 
             except Exception as e:
                 print("Ошибка при отправке:", e)
