@@ -70,13 +70,13 @@ class TelegramVoiceBot:
             lang = TextProcessor.detect_lang(clean_text)
             await self.queue.put((clean_text, lang, source, msg.sender_id, msg.date.isoformat()))
 
-        asyncio.create_task(self.voice_worker())
+        #asyncio.create_task(self.voice_worker())
         await self.client.run_until_disconnected()
 
 async def voice_worker(self):
-    import requests
-
     while True:
+        await asyncio.sleep(10)  # Проверяем очередь каждые 10 секунд
+        print("🎧 Voice worker запущен...")
         clean_text, lang, source, sender_id, date = await self.queue.get()
 
         tts = gTTS(text=clean_text, lang=lang, slow=False)
