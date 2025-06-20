@@ -55,13 +55,13 @@ class TelegramVoiceBot:
                 source = 'Неизвестно'
                 
             print("DEBUG save_message parameters:", self.db.save_message.__code__.co_varnames)
-            
             # Сохраняем в базу
             self.db.save_message(
                 sender_id=msg.sender_id,
                 message=msg.text,
                 date=msg.date.isoformat(),
-                source=source
+                source=source,
+                filename='Неизвестно'  # Здесь будет ссылка на аудио после обработки
                 )
 
             clean_text = TextProcessor.clean(msg.text)
