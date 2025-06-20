@@ -22,7 +22,7 @@ class TelegramVoiceBot:
         self.api_hash = api_hash
         self.phone = phone
         self.source_channels = source_channels
-        self.db = MessageDB(db_file)
+        self.db = MessageDB()
         self.client = TelegramClient('bot_session', api_id, api_hash)
         self.queue = asyncio.Queue()
         self.target_chat = target_chat
