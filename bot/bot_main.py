@@ -53,7 +53,9 @@ class TelegramVoiceBot:
                 source = chat.title if hasattr(chat, 'title') else 'Неизвестно'
             except:
                 source = 'Неизвестно'
-
+                
+            print("DEBUG save_message parameters:", self.db.save_message.__code__.co_varnames)
+            
             # Сохраняем в базу
             self.db.save_message(
                 sender_id=msg.sender_id,
@@ -112,7 +114,6 @@ async def voice_worker(self):
                     source=source,
                     filename=audio_url  # передаём прямую ссылку!
                 )
-
 
             except Exception as e:
                 print("Ошибка при отправке:", e)
