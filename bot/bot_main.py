@@ -17,13 +17,13 @@ cloudinary.config(
 )
 
 class TelegramVoiceBot:
-    def __init__(self, api_id, api_hash, phone, source_channels, db_file, target_chat):
+    def __init__(self, api_id, api_hash, phone, source_channels, target_chat):
         self.api_id = api_id
         self.api_hash = api_hash
         self.phone = phone
         self.source_channels = source_channels
         self.db = MessageDB()
-        self.client = TelegramClient('bot_session', api_id, api_hash)
+        self.client = None
         self.queue = asyncio.Queue()
         self.target_chat = target_chat
 
