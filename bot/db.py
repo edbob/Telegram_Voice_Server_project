@@ -11,13 +11,13 @@ class MessageDB:
         with self.conn.cursor() as c:
             c.execute('DROP TABLE IF EXISTS messages')
             c.execute('''
-                CREATE TABLE messages (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    sender_id INTEGER,
-                    message TEXT,
-                    date TEXT,
-                    source TEXT,
-                    filename TEXT
+                CREATE TABLE IF NOT EXISTS messages (
+                id SERIAL PRIMARY KEY,
+                sender_id BIGINT,
+                message TEXT,
+                date TIMESTAMP,
+                source TEXT,
+                filename TEXT
                 )
             ''')
             self.conn.commit()
