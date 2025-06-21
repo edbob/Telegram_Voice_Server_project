@@ -15,6 +15,14 @@ VOICE_FOLDER = os.path.join(app.root_path, 'static', 'voice')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(VOICE_FOLDER, exist_ok=True)
 
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(
+        os.path.join(app.root_path, 'static'),
+        'favicon.ico',
+        mimetype='image/vnd.microsoft.icon'
+    )
+
 @app.route('/')
 def index():
     return render_template('index.html')
