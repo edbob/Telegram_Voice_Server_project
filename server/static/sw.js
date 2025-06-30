@@ -1,6 +1,12 @@
 self.addEventListener('install', e => {
-  const assets = ['./', '/static/style.css', '/static/script.js'];
-  e.waitUntil(caches.open('static-cache-v1').then(c => c.addAll(assets)));
+  const assets = [
+    '/',
+    '/static/css/style.css',
+    '/static/script/script.js'
+  ];
+  e.waitUntil(
+    caches.open('static-cache-v1').then(c => c.addAll(assets))
+  );
 });
 
 self.addEventListener('fetch', e => {

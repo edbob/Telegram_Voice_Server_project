@@ -12,7 +12,7 @@ FOLDERS = [
 ]
 
 # Максимальный возраст файлов (в секундах): 24 часа = 86400
-MAX_FILE_AGE = 24 * 60 * 60
+MAX_FILE_AGE = 1 * 60 * 60
 print("Очистка запущена!")
 
 def delete_old_files(folder):

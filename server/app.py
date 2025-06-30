@@ -1,10 +1,13 @@
 from flask import Flask, request, render_template, jsonify, send_from_directory
 import os
+import sys
 import shutil
 from datetime import datetime
 from flask import Response
 from queue import Queue
 import sqlite3
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from bot.processor import TextProcessor
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
@@ -29,43 +32,54 @@ def index():
 
 @app.route('/api/messages')
 def get_messages():
-    files = os.listdir(VOICE_FOLDER)
-    files = [f for f in files if f.endswith('.ogg')]
-
-    # Сортировка файлов по дате создания — последние сверху
-    files = sorted(files, key=lambda f: os.path.getctime(os.path.join(VOICE_FOLDER, f)), reverse=True)
-
-    latest_files = files[:10]
-
-    # Подключаемся к базе
     DB_PATH = os.path.join(app.root_path, '..', 'bot', 'messages.db')
     conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
     c = conn.cursor()
 
-    # Получаем последние 10 сообщений из базы (source, date)
-    c.execute('''
-        SELECT date, source FROM messages ORDER BY date DESC LIMIT 10
-    ''')
-    rows = c.fetchall()
-    conn.close()
+    try:
+        c.execute('''
+            SELECT id, filename, message, date, source 
+            FROM messages 
+            WHERE filename IS NOT NULL AND filename != ''
+            ORDER BY id DESC 
+            LIMIT 10
+        ''')
+        rows = c.fetchall()
+    finally:
+        conn.close()
 
     messages = []
+    for row in rows:
+        filename = row['filename']
+        file_path = os.path.join(VOICE_FOLDER, filename)
 
-    for i, f in enumerate(latest_files):
-        path = os.path.join(VOICE_FOLDER, f)
-        created = datetime.fromtimestamp(os.path.getctime(path)).strftime('%Y-%m-%d %H:%M:%S')
+        if not filename or not os.path.exists(file_path):
+            print(f"⚠️ Файл не найден: {filename}")
+            continue
 
-        # Попробуем взять соответствующий source
-        if i < len(rows):
-            source = rows[i][1]
-        else:
-            source = "Неизвестно"
+        try:
+            created = datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
+        except Exception as e:
+            print(f"❌ Ошибка получения времени для {filename}: {e}")
+            created = row['date'] or 'Неизвестно'
+
+        try:
+            full_message = TextProcessor.clean(row['message'] or '')
+        except Exception as e:
+            print(f"❌ Ошибка обработки текста: {e}")
+            full_message = row['message'] or ''
+
+        preview = (full_message[:50] + '…') if len(full_message) > 50 else full_message
 
         messages.append({
-            'filename': f,
-            'url': f'/static/voice/{f}',
+            'id': row['id'],
+            'filename': filename,
+            'url': f'/static/voice/{filename}',
             'date': created,
-            'source': source
+            'source': row['source'] or "Неизвестно",
+            'preview': preview,
+            'full_message': full_message
         })
 
     return jsonify(messages)

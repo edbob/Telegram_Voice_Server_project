@@ -13,3 +13,9 @@ bot/messages.db
 bot_session.session-journal
 mobile/
 mobile/*
+server/test_app.py
+delete_file_db.py
+.vscode/
+*.mp3
+*.ogg
+*.log

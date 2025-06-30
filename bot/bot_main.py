@@ -42,6 +42,7 @@ class TelegramVoiceBot:
             try:
                 chat = await event.get_chat()
                 source = chat.title if hasattr(chat, 'title') else 'Неизвестно'
+                filename = f"voice_{int(time.time())}.ogg"
             except:
                 source = 'Неизвестно'
 
@@ -50,7 +51,8 @@ class TelegramVoiceBot:
                 sender_id=msg.sender_id,
                 message=msg.text, 
                 date=msg.date.isoformat(),
-                source=source
+                source=source,
+                filename=filename
             )
 
             clean_text = TextProcessor.clean(msg.text)
@@ -59,7 +61,7 @@ class TelegramVoiceBot:
                 return
 
             lang = TextProcessor.detect_lang(clean_text)
-            await self.queue.put((clean_text, lang))
+            await self.queue.put((clean_text, lang, filename))
 
         asyncio.create_task(self.voice_worker())
         await self.client.run_until_disconnected()
@@ -68,7 +70,7 @@ class TelegramVoiceBot:
         import requests
 
         while True:
-            clean_text, lang = await self.queue.get()
+            clean_text, lang, filename = await self.queue.get()
 
             tts = gTTS(text=clean_text, lang=lang, slow=False)
             mp3_path = "voice.mp3"
@@ -85,8 +87,13 @@ class TelegramVoiceBot:
                 print(f"✅ Файл ogg создан: {ogg_path}, размер: {os.path.getsize(ogg_path)} байт")
             
             try:
-                # Отправка в Telegram
-                await self.client.send_file(self.target_chat, ogg_path, voice_note=True)
+                # Отправка в Telegram .ogg с коротким текстом
+                await self.client.send_file(
+                    self.target_chat,
+                    ogg_path,
+                    voice_note=True,
+                    caption=clean_text[:200]  # например до 200 символов
+                )
                 print("Отправлено в Telegram")
 
                 # Отправка на сервер

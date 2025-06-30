@@ -1,4 +1,4 @@
-// Получаем статус автопрослушивания
+// === Настройки ===
 function isAutoplayEnabled() {
     return localStorage.getItem('autoplayEnabled') !== 'false'; // по умолчанию включено
 }
@@ -20,7 +20,7 @@ function updateAutoplayButton() {
     btn.classList.toggle('off', !enabled);
 }
 
-// Работа с прочитанными
+// === Работа с прочитанными ===
 function getReadMessages() {
     const stored = localStorage.getItem('readMessages');
     return stored ? JSON.parse(stored) : [];
@@ -34,6 +34,34 @@ function markAsRead(filename) {
     }
 }
 
+// === Очередь воспроизведения ===
+let audioQueue = [];
+let isPlaying = false;
+
+function playNextInQueue() {
+    if (audioQueue.length === 0) {
+        isPlaying = false;
+        return;
+    }
+
+    isPlaying = true;
+    const { audio, filename, div } = audioQueue.shift();
+
+    audio.play().then(() => {
+        markAsRead(filename);
+        div.classList.remove('unread');
+        div.classList.add('read');
+    }).catch(err => {
+        console.warn("Не удалось воспроизвести:", err);
+        playNextInQueue(); // пропустить ошибочный и продолжить
+    });
+
+    audio.addEventListener('ended', () => {
+        playNextInQueue();
+    }, { once: true });
+}
+
+// === Получение сообщений с сервера ===
 async function fetchMessages() {
     const res = await fetch('/api/messages');
     const data = await res.json();
@@ -50,13 +78,24 @@ async function fetchMessages() {
         div.className = 'message ' + (isRead ? 'read' : 'unread');
 
         div.innerHTML = `
+            <p class="preview" style="cursor:pointer;">${msg.preview}</p>
+            <p class="full-message" style="display:none;">${msg.full_message}</p>
             <audio controls src="${msg.url}"></audio><br>
-            <span class="date">Добавлено: ${msg.date} | Источник: ${msg.source || 'Неизвестно'}</span>
+            <span class="date">ID: ${msg.id} | Добавлено: ${msg.date} | Источник: ${msg.source || 'Неизвестно'}</span>
         `;
 
         container.appendChild(div);
 
+        const previewEl = div.querySelector('.preview');
+        const fullEl = div.querySelector('.full-message');
         const audio = div.querySelector('audio');
+
+        // Раскрытие полного текста
+        previewEl.addEventListener('click', () => {
+            const isVisible = fullEl.style.display === 'block';
+            fullEl.style.display = isVisible ? 'none' : 'block';
+            previewEl.style.fontWeight = isVisible ? 'normal' : 'bold';
+        });
 
         // Автовоспроизведение первого непрочитанного
         if (index === 0 && !isRead && isAutoplayEnabled()) {
@@ -78,9 +117,14 @@ async function fetchMessages() {
             }
         });
     });
+
+    // Стартуем воспроизведение очереди, если ещё не начали
+    if (isAutoplayEnabled() && !isPlaying) {
+        playNextInQueue();
+    }
 }
 
-// SSE
+// === SSE — Получение уведомлений о новых сообщениях ===
 const eventSource = new EventSource('/events');
 eventSource.onmessage = function(event) {
     if (event.data === 'new_message') {
@@ -88,16 +132,16 @@ eventSource.onmessage = function(event) {
     }
 };
 
-// PWA
+// === PWA — Service Worker ===
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/static/sw.js')
-    .then(() => console.log('Service Worker зарегистрирован'))
-    .catch(console.error);
+    navigator.serviceWorker.register('/static/sw.js')
+        .then(() => console.log('✅ Service Worker зарегистрирован'))
+        .catch(console.error);
 }
 
-// Обработка кнопки
+// === Обработка кнопки ===
 document.getElementById('autoplay-toggle').addEventListener('click', toggleAutoplay);
 
-// Первая загрузка
+// === Первая загрузка ===
 updateAutoplayButton();
 fetchMessages();
