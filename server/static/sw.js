@@ -1,3 +1,4 @@
+//PWA Service Worker
 self.addEventListener('install', e => {
   const assets = [
     '/',
