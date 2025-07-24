@@ -6,6 +6,7 @@ from telethon import TelegramClient, events
 from telethon.tl.types import PeerChannel
 from bot.db import MessageDB
 from bot.processor import TextProcessor
+import datetime
 
 class TelegramVoiceBot:
     def __init__(self, api_id, api_hash, phone, source_channels, db_file, target_chat):
@@ -20,8 +21,8 @@ class TelegramVoiceBot:
 
     async def start(self):
         await self.client.start(phone=self.phone)
-        print("\nБот запущен и слушает источники...")
-
+        now = datetime.datetime.now().strftime('%H:%M %d.%m.%Y')
+        print(f"\n✅ Бот запущен в {now} и слушает источники...")
         try:
             entities = []
             for ch_id in self.source_channels:
@@ -29,16 +30,17 @@ class TelegramVoiceBot:
                 print(f"🔗 Канал найден: {entity.title} (ID: {entity.id})")
                 entities.append(entity)
         except Exception as e:
-            print(f"Ошибка доступа к каналу: {e}")
+            print(f"❌ Ошибка доступа к каналу: {e}")
+            if "disk I/O error" in str(e):
+                print("➡️ Проверьте права на папку сессии, свободное место на диске и не открыт ли файл сессии в другой программе.")
             return
-
+        
+        # === Обработка новых сообщений ===
         @self.client.on(events.NewMessage(chats=entities))
-        # Обработка новых сообщений
         async def handler(event):
             msg = event.message
             print(f"\n[{msg.date}] {msg.sender_id}: {msg.text}")
-            
-            # Получаем источник — название группы/канала
+
             try:
                 chat = await event.get_chat()
                 source = chat.title if hasattr(chat, 'title') else 'Неизвестно'
@@ -57,18 +59,36 @@ class TelegramVoiceBot:
 
             clean_text = TextProcessor.clean(msg.text)
             if not clean_text.strip():
-                print("Пустой текст после очистки — пропущено.")
+                print("⚠️ Пустой текст после очистки — пропущено.")
                 return
 
             lang = TextProcessor.detect_lang(clean_text)
             await self.queue.put((clean_text, lang, filename))
+
+        # === Обработка присоединений и уходов ===
+        @self.client.on(events.ChatAction)
+        async def membership_handler(event):
+            user = await event.get_user()
+            if user:
+                username = f"@{user.username}" if user.username else (user.first_name or "Неизвестный")
+            else:
+                username = "Неизвестный"
+
+            if event.user_joined or event.user_added:
+                print(f"👋 {username} присоединился к чату.")
+                await event.reply(f"Привет, {username}! Добро пожаловать 👋")
+                self.db.save_stat(event.chat_id, user.id if user else 0, "joined")
+
+            elif event.user_left or event.user_kicked:
+                print(f"😢 {username} покинул чат.")
+                await event.reply(f"{username}, жаль что ты покидаешь нас 😢. Что случилось?")
+                self.db.save_stat(event.chat_id, user.id if user else 0, "left")
 
         asyncio.create_task(self.voice_worker())
         await self.client.run_until_disconnected()
 
     async def voice_worker(self):
         import requests
-
         while True:
             clean_text, lang, filename = await self.queue.get()
 
@@ -85,7 +105,7 @@ class TelegramVoiceBot:
                 print("❌ Файл ogg не создан или пустой!")
             else:
                 print(f"✅ Файл ogg создан: {ogg_path}, размер: {os.path.getsize(ogg_path)} байт")
-            
+
             try:
                 # Отправка в Telegram .ogg с коротким текстом
                 await self.client.send_file(
@@ -94,15 +114,22 @@ class TelegramVoiceBot:
                     voice_note=True,
                     caption=clean_text[:200]  # например до 200 символов
                 )
-                print("Отправлено в Telegram")
+                print("📤 Отправлено в Telegram")
 
                 # Отправка на сервер
                 with open(ogg_path, 'rb') as f:
-                    response = requests.post("http://localhost:5000/upload", files={'file': (ogg_path, f)})
-                    print(f"Ответ сервера: {response.text}")
+                    try:
+                        response = requests.post("http://localhost:5000/upload", files={'file': (ogg_path, f)})
+                        response.raise_for_status()
+                        print(f"🌍 Ответ сервера: {response.text}")
+                    except requests.exceptions.RequestException as e:
+                        print(f"❌ Ошибка отправки на сервер: {e}")
+                        if response is not None:
+                            print(f"🔁 Код ответа: {response.status_code}")
+                            print(f"📦 Тело ответа: {response.text}")
 
             except Exception as e:
-                print(f"Ошибка отправки: {e}")
+                print(f"❌ Ошибка отправки: {e}")
 
             finally:
                 for f in (mp3_path, ogg_path):

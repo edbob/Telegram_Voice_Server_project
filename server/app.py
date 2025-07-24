@@ -18,6 +18,14 @@ VOICE_FOLDER = os.path.join(app.root_path, 'static', 'voice')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(VOICE_FOLDER, exist_ok=True)
 
+@app.route('/manifest.json')
+def manifest():
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'manifest.json')
+
+@app.route('/service-worker.js')
+def sw():
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'service-worker.js')
+
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(
@@ -54,12 +62,14 @@ def get_messages():
         filename = row['filename']
         file_path = os.path.join(VOICE_FOLDER, filename)
 
-        if not filename or not os.path.exists(file_path):
-            print(f"⚠️ Файл не найден: {filename}")
-            continue
+        file_exists = filename and os.path.exists(file_path)
+        
+        if not file_exists:
+            print(f"⚠️ Файл не найден: {filename} — но сообщение будет показано.")
 
         try:
-            created = datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
+            created = datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M:%S') \
+                if file_exists else (row['date'] or 'Неизвестно')
         except Exception as e:
             print(f"❌ Ошибка получения времени для {filename}: {e}")
             created = row['date'] or 'Неизвестно'
@@ -74,12 +84,13 @@ def get_messages():
 
         messages.append({
             'id': row['id'],
-            'filename': filename,
-            'url': f'/static/voice/{filename}',
+            'filename': filename if file_exists else None,
+            'url': f'/static/voice/{filename}' if file_exists else None,
             'date': created,
             'source': row['source'] or "Неизвестно",
             'preview': preview,
-            'full_message': full_message
+            'full_message': full_message,
+            'has_audio': file_exists
         })
 
     return jsonify(messages)

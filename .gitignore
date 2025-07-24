@@ -11,6 +11,7 @@ uploads/*
 server/static/voice/*
 bot/messages.db
 bot_session.session-journal
+bot_session_temp.session
 mobile/
 mobile/*
 server/test_app.py

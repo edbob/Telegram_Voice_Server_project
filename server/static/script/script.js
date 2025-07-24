@@ -77,10 +77,18 @@ async function fetchMessages() {
         const div = document.createElement('div');
         div.className = 'message ' + (isRead ? 'read' : 'unread');
 
+    // Формируем HTML в зависимости от наличия файла
+        let audioHTML = '';
+        if (msg.url) {
+            audioHTML = `<audio controls src="${msg.url}"></audio><br>`;
+        } else {
+            audioHTML = `<div class="no-audio">🔇 Аудиофайл недоступен</div>`;
+        }
+
         div.innerHTML = `
             <p class="preview" style="cursor:pointer;">${msg.preview}</p>
             <p class="full-message" style="display:none;">${msg.full_message}</p>
-            <audio controls src="${msg.url}"></audio><br>
+            ${audioHTML}
             <span class="date">ID: ${msg.id} | Добавлено: ${msg.date} | Источник: ${msg.source || 'Неизвестно'}</span>
         `;
 
@@ -117,7 +125,7 @@ async function fetchMessages() {
             }
         });
     });
-
+    
     // Стартуем воспроизведение очереди, если ещё не начали
     if (isAutoplayEnabled() && !isPlaying) {
         playNextInQueue();

@@ -18,6 +18,16 @@ class MessageDB:
                 filename TEXT
             )
         ''')
+        # Создание таблицы stats
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS stats (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                chat_id INTEGER,
+                user_id INTEGER,
+                action TEXT,
+                date TEXT
+            )
+        ''')
 
         # Пытаемся добавить колонку filename, если она ещё не существует (можно убрать, если уже есть)
         try:
@@ -36,3 +46,13 @@ class MessageDB:
                 VALUES (?, ?, ?, ?, ?)
             ''', (sender_id, message, date, source, filename))
             conn.commit()
+    
+    def save_stat(self, chat_id, user_id, action):
+        conn = sqlite3.connect(self.db_file)
+        c = conn.cursor()
+        c.execute('''
+            INSERT INTO stats (chat_id, user_id, action, date)
+            VALUES (?, ?, ?, datetime('now'))
+        ''', (chat_id, user_id, action))
+        conn.commit()
+        conn.close()
