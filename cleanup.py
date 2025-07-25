@@ -11,8 +11,8 @@ FOLDERS = [
     os.path.join(BASE_DIR, 'server', 'uploads')
 ]
 
-# Максимальный возраст файлов (в секундах): 24 часа = 86400
-MAX_FILE_AGE = 24 * 60 * 60
+# Максимальный возраст файлов (в секундах): 7 дней = 604800
+MAX_FILE_AGE = 7 * 24 * 60 * 60
 print("Очистка запущена!")
 
 def delete_old_files(folder):

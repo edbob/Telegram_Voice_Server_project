@@ -87,6 +87,11 @@ class TelegramVoiceBot:
         asyncio.create_task(self.voice_worker())
         await self.client.run_until_disconnected()
 
+    async def stop(self):
+        print("🛑 Остановка бота...")
+        await self.client.disconnect()
+        print("✅ Соединение с Telegram закрыто.")
+        
     async def voice_worker(self):
         import requests
         while True:
@@ -97,36 +102,31 @@ class TelegramVoiceBot:
             ogg_path = f"voice_{int(time.time())}.ogg"
 
             tts.save(mp3_path)
-            # Конвертация
             os.system(f'ffmpeg -y -i {mp3_path} -c:a libopus {ogg_path}')
-            
-            # Проверка размера файла
+
             if not os.path.exists(ogg_path) or os.path.getsize(ogg_path) == 0:
                 print("❌ Файл ogg не создан или пустой!")
             else:
                 print(f"✅ Файл ogg создан: {ogg_path}, размер: {os.path.getsize(ogg_path)} байт")
 
             try:
-                # Отправка в Telegram .ogg с коротким текстом
+                # Отправка в Telegram
                 await self.client.send_file(
                     self.target_chat,
                     ogg_path,
                     voice_note=True,
-                    caption=clean_text[:200]  # например до 200 символов
+                    caption=clean_text[:200]
                 )
                 print("📤 Отправлено в Telegram")
 
-                # Отправка на сервер
+                # === Загрузка на сервер ===
                 with open(ogg_path, 'rb') as f:
-                    try:
-                        response = requests.post("http://localhost:5000/upload", files={'file': (ogg_path, f)})
-                        response.raise_for_status()
-                        print(f"🌍 Ответ сервера: {response.text}")
-                    except requests.exceptions.RequestException as e:
-                        print(f"❌ Ошибка отправки на сервер: {e}")
-                        if response is not None:
-                            print(f"🔁 Код ответа: {response.status_code}")
-                            print(f"📦 Тело ответа: {response.text}")
+                    response = requests.post("http://localhost:5000/upload", files={'file': (ogg_path, f)})
+
+                if response.status_code == 200:
+                    print(f"🌍 Успешно отправлено на сервер: {response.text}")
+                else:
+                    print(f"⚠️ Ошибка при загрузке на сервер: {response.status_code} — {response.text}")
 
             except Exception as e:
                 print(f"❌ Ошибка отправки: {e}")

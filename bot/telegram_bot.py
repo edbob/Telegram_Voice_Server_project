@@ -3,13 +3,15 @@ from telethon import TelegramClient
 from bot.bot_main import TelegramVoiceBot
 import sys
 import os
+import asyncio
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from bot.config import ADMIN_ID, BOT_TOKEN, phone, DB_URL
 
-api_id = 27893983
-api_hash = '7333605e802b401937e72688aeaa1ea3'
-phone = '+380979493781'
+api_id = ADMIN_ID
+api_hash = BOT_TOKEN
+phone = phone
 
-db_file = 'bot/messages.db'
+db_file = DB_URL
 target_chat = -1002129469860
 
 async def main():
@@ -50,8 +52,13 @@ async def main():
 
     try:
         await bot.start()
+    except asyncio.CancelledError:
+        print("⚠️ Отмена выполнения (CancelledError)")
     except KeyboardInterrupt:
         print("\n⏹️ Бот остановлен пользователем (Ctrl+C)")
+    finally:
+        await bot.stop()
+        print("🧹 Очистка завершена.")
 
 if __name__ == "__main__":
     asyncio.run(main())

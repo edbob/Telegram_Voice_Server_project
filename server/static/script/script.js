@@ -61,23 +61,28 @@ function playNextInQueue() {
     }, { once: true });
 }
 
+// Хранение уже добавленных сообщений по filename
+const shownMessages = new Set();
 // === Получение сообщений с сервера ===
 async function fetchMessages() {
     const res = await fetch('/api/messages');
     const data = await res.json();
 
     const container = document.getElementById('messages');
-    container.innerHTML = '';
-
     const readMessages = getReadMessages();
 
+    shownMessages.clear();          // очищаем set
+    container.innerHTML = '';       // очищаем HTML
+
     data.forEach((msg, index) => {
+        if (shownMessages.has(msg.filename)) return;
+
         const isRead = readMessages.includes(msg.filename);
 
         const div = document.createElement('div');
         div.className = 'message ' + (isRead ? 'read' : 'unread');
 
-    // Формируем HTML в зависимости от наличия файла
+        // Формируем HTML
         let audioHTML = '';
         if (msg.url) {
             audioHTML = `<audio controls src="${msg.url}"></audio><br>`;
@@ -92,41 +97,43 @@ async function fetchMessages() {
             <span class="date">ID: ${msg.id} | Добавлено: ${msg.date} | Источник: ${msg.source || 'Неизвестно'}</span>
         `;
 
-        container.appendChild(div);
+        container.appendChild(div); // Добавляем в конец списка
 
+        // Обработчики
         const previewEl = div.querySelector('.preview');
         const fullEl = div.querySelector('.full-message');
         const audio = div.querySelector('audio');
 
-        // Раскрытие полного текста
         previewEl.addEventListener('click', () => {
             const isVisible = fullEl.style.display === 'block';
             fullEl.style.display = isVisible ? 'none' : 'block';
             previewEl.style.fontWeight = isVisible ? 'normal' : 'bold';
         });
 
-        // Автовоспроизведение первого непрочитанного
-        if (index === 0 && !isRead && isAutoplayEnabled()) {
-            audio.play().then(() => {
-                markAsRead(msg.filename);
-                div.classList.remove('unread');
-                div.classList.add('read');
-            }).catch(err => {
-                console.warn("Не удалось воспроизвести:", err);
+        if (audio) {
+            // Автовоспроизведение
+            if (index === 0 && !isRead && isAutoplayEnabled()) {
+                audio.play().then(() => {
+                    markAsRead(msg.filename);
+                    div.classList.remove('unread');
+                    div.classList.add('read');
+                }).catch(err => console.warn("Не удалось воспроизвести:", err));
+            }
+
+            // Ручное воспроизведение
+            audio.addEventListener('play', () => {
+                if (!readMessages.includes(msg.filename)) {
+                    markAsRead(msg.filename);
+                    div.classList.remove('unread');
+                    div.classList.add('read');
+                }
             });
         }
 
-        // Ручное воспроизведение
-        audio.addEventListener('play', () => {
-            if (!readMessages.includes(msg.filename)) {
-                markAsRead(msg.filename);
-                div.classList.remove('unread');
-                div.classList.add('read');
-            }
-        });
+        // Помечаем как отображённое
+        shownMessages.add(msg.filename);
     });
-    
-    // Стартуем воспроизведение очереди, если ещё не начали
+
     if (isAutoplayEnabled() && !isPlaying) {
         playNextInQueue();
     }

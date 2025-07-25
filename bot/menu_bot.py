@@ -4,9 +4,8 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from bot.weather import get_weather
-
-
-ADMIN_CHAT_ID = 27893983  # Telegram ID
+from bot.config import ADMIN_ID, BOT_TOKEN
+ADMIN_CHAT_ID = ADMIN_ID  # Telegram ID
 # Состояние для отправки сообщения админу
 SEND_ADMIN_MESSAGE = range(1)
 
@@ -55,7 +54,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     from telegram.ext import ApplicationBuilder
 
-    TOKEN = "7152007094:AAE3yHERr4WuVMvkLa-inKQL1xQsqFN0fmQ" # Токен бота
+    TOKEN = BOT_TOKEN
 
     app = ApplicationBuilder().token(TOKEN).build()
     

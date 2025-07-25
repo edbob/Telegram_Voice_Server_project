@@ -22,9 +22,9 @@ os.makedirs(VOICE_FOLDER, exist_ok=True)
 def manifest():
     return send_from_directory(os.path.join(app.root_path, 'static'), 'manifest.json')
 
-@app.route('/service-worker.js')
+@app.route('/sw.js')
 def sw():
-    return send_from_directory(os.path.join(app.root_path, 'static'), 'service-worker.js')
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'sw.js')
 
 @app.route('/favicon.ico')
 def favicon():

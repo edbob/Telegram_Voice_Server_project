@@ -20,3 +20,4 @@ delete_file_db.py
 *.mp3
 *.ogg
 *.log
+.env

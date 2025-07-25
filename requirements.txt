@@ -5,3 +5,4 @@ emoji
 pygame
 flask
 requests
+python-dotenv

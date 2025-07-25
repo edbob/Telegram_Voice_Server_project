@@ -1,6 +1,7 @@
 import requests
+from bot.config import OpenWeatherMap_API_KEY
 
-API_KEY = 'a5754870d11d735000d07b7ae4a32222'  # OpenWeatherMap API Key
+API_KEY = OpenWeatherMap_API_KEY  # OpenWeatherMap API Key
 BASE_URL = 'http://api.openweathermap.org/data/2.5/weather'
 
 def get_weather(city='Odessa', lang='ru', units='metric'):
