@@ -5,14 +5,13 @@ import sys
 import os
 import asyncio
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from bot.config import ADMIN_ID, BOT_TOKEN, phone, DB_URL
+from bot.config import ADMIN_ID, PHONE, DB_URL, API_HASH, TARGET_CHAT
 
 api_id = ADMIN_ID
-api_hash = BOT_TOKEN
-phone = phone
-
+api_hash = API_HASH
+phone = PHONE
 db_file = DB_URL
-target_chat = -1002129469860
+target_chat = TARGET_CHAT
 
 async def main():
     print("⏳ Получаю список каналов и групп через Telethon...")
