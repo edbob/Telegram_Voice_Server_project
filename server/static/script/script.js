@@ -1,6 +1,6 @@
 // === Настройки ===
 function isAutoplayEnabled() {
-    return localStorage.getItem('autoplayEnabled') !== 'false'; // по умолчанию включено
+    return localStorage.getItem('autoplayEnabled') !== 'false';
 }
 
 function toggleAutoplay() {

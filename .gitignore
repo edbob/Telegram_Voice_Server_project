@@ -8,7 +8,6 @@ __pycache__/
 messages.db
 bot_session.session
 uploads/*
-server/static/voice/*
 bot/messages.db
 bot_session.session-journal
 bot_session_temp.session

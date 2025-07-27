@@ -12,11 +12,9 @@ from bot.processor import TextProcessor
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
 UPLOAD_FOLDER = os.path.join(app.root_path, 'uploads')
-VOICE_FOLDER = os.path.join(app.root_path, 'static', 'voice')
 
 # Убедимся, что нужные папки существуют
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(VOICE_FOLDER, exist_ok=True)
 
 @app.route('/manifest.json')
 def manifest():
@@ -60,12 +58,22 @@ def get_messages():
     messages = []
     for row in rows:
         filename = row['filename']
-        file_path = os.path.join(VOICE_FOLDER, filename)
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
 
         file_exists = filename and os.path.exists(file_path)
-        
+
         if not file_exists:
-            print(f"⚠️ Файл не найден: {filename} — но сообщение будет показано.")
+            print(f"⚠️ Файл не найден: {filename}. Озвучиваем сообщение заново.")
+            try:
+                # Озвучиваем сообщение (используем gTTS)
+                from gtts import gTTS
+                text = row['message'] or ''
+                tts = gTTS(text, lang='ru')
+                tts.save(file_path)
+                file_exists = True
+                print(f"✅ Файл озвучен и сохранён: {file_path}")
+            except Exception as e:
+                print(f"❌ Ошибка озвучивания: {e}")
 
         try:
             created = datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M:%S') \
@@ -85,7 +93,7 @@ def get_messages():
         messages.append({
             'id': row['id'],
             'filename': filename if file_exists else None,
-            'url': f'/static/voice/{filename}' if file_exists else None,
+            'url': f'/server/uploads/{filename}' if file_exists else None,
             'date': created,
             'source': row['source'] or "Неизвестно",
             'preview': preview,
@@ -125,12 +133,7 @@ def upload_file():
     save_path = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(save_path)
 
-    # Копируем в static/voice/
-    static_path = os.path.join(VOICE_FOLDER, file.filename)
-    shutil.copy(save_path, static_path)
-
     print(f"✅ Загружено: {save_path}")
-    print(f"📁 Скопировано в: {static_path}")
     notify_clients()
     return 'Файл получен', 200
 
