@@ -7,7 +7,7 @@ def send_voice_message(text, lang='ru'):
     voice_path = 'voice.mp3'
     tts.save(voice_path)
 
-    url = 'http://localhost:5000/upload'
+    url = 'http://localhost:5000/server/upload'
     files = {'voice': open(voice_path, 'rb')}
     data = {'text': text}
     response = requests.post(url, files=files, data=data)

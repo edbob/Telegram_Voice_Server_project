@@ -26,7 +26,7 @@ class TelegramVoiceBot:
         try:
             entities = []
             for ch_id in self.source_channels:
-                entity = await self.client.get_entity(PeerChannel(ch_id))
+                entity = await self.client.get_entity(ch_id)
                 print(f"🔗 Канал найден: {entity.title} (ID: {entity.id})")
                 entities.append(entity)
         except Exception as e:
@@ -121,7 +121,7 @@ class TelegramVoiceBot:
 
                 # === Загрузка на сервер ===
                 with open(ogg_path, 'rb') as f:
-                    response = requests.post("http://localhost:5000/upload", files={'file': (ogg_path, f)})
+                    response = requests.post("http://localhost:5000/server/upload", files={'file': (ogg_path, f)})
 
                 if response.status_code == 200:
                     print(f"🌍 Успешно отправлено на сервер: {response.text}")
