@@ -69,7 +69,6 @@ def get_messages():
         if not file_exists:
             print(f"⚠️ Файл не найден: {filename}. Озвучиваем сообщение заново.")
             try:
-                # Озвучиваем сообщение (используем gTTS)
                 from gtts import gTTS
                 text = row['message'] or ''
                 tts = gTTS(text, lang='ru')
@@ -79,12 +78,8 @@ def get_messages():
             except Exception as e:
                 print(f"❌ Ошибка озвучивания: {e}")
 
-        try:
-            created = datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M:%S') \
-                if file_exists else (row['date'] or 'Неизвестно')
-        except Exception as e:
-            print(f"❌ Ошибка получения времени для {filename}: {e}")
-            created = row['date'] or 'Неизвестно'
+        # Используем дату только из базы!
+        created = row['date'] or 'Неизвестно'
 
         try:
             full_message = TextProcessor.clean(row['message'] or '')

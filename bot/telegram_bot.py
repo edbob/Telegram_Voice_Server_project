@@ -1,10 +1,10 @@
 import asyncio
 from telethon import TelegramClient
-from bot.bot_main import TelegramVoiceBot
 import sys
 import os
 import asyncio
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from bot.bot_main import TelegramVoiceBot
 from bot.config import ADMIN_ID, PHONE, DB_URL, API_HASH, TARGET_CHAT
 
 api_id = ADMIN_ID
@@ -23,10 +23,9 @@ async def main():
     channel_infos = []
 
     async for ch in client.iter_dialogs():
-        if not ch.is_channel:
-            continue
-        print(f"🔗 {ch.name} (ID: {ch.id})")
-        channel_infos.append((ch.name, ch.id))
+        if ch.is_channel or ch.is_group:
+            print(f"🔗 {ch.name} (ID: {ch.id})")
+            channel_infos.append((ch.name, ch.id))
 
     await client.disconnect()
 
@@ -35,7 +34,7 @@ async def main():
         return
 
     # выбор пользователем
-    print("\nДоступные каналы:")
+    print("\n✅ Доступные каналы:")
     for idx, (title, ch_id) in enumerate(channel_infos):
         print(f"{idx+1}: {title} (ID: {ch_id})")
 

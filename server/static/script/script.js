@@ -44,8 +44,8 @@ function playNextInQueue() {
         return;
     }
 
-    isPlaying = true;
     const { audio, filename, div } = audioQueue.shift();
+    isPlaying = true;
 
     audio.play().then(() => {
         markAsRead(filename);
@@ -53,7 +53,7 @@ function playNextInQueue() {
         div.classList.add('read');
     }).catch(err => {
         console.warn("Не удалось воспроизвести:", err);
-        playNextInQueue(); // пропустить ошибочный и продолжить
+        playNextInQueue(); // Пропустить и перейти к следующему
     });
 
     audio.addEventListener('ended', () => {
@@ -111,6 +111,10 @@ async function fetchMessages() {
         });
 
         if (audio) {
+        // Добавляем в очередь, если сообщение не прочитано
+            if (!isRead) {
+                audioQueue.push({ audio, filename: msg.filename, div });
+            }
             // Автовоспроизведение
             if (index === 0 && !isRead && isAutoplayEnabled()) {
                 audio.play().then(() => {
@@ -133,8 +137,8 @@ async function fetchMessages() {
         // Помечаем как отображённое
         shownMessages.add(msg.filename);
     });
-
-    if (isAutoplayEnabled() && !isPlaying) {
+    // Если ничего не играет — запускаем очередь
+    if (!isPlaying && audioQueue.length > 0) {
         playNextInQueue();
     }
 }

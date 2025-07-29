@@ -26,7 +26,7 @@ class TelegramVoiceBot:
         try:
             entities = []
             for ch_id in self.source_channels:
-                entity = await self.client.get_entity(ch_id)
+                entity = await self.client.get_entity(PeerChannel(ch_id))
                 print(f"🔗 Канал найден: {entity.title} (ID: {entity.id})")
                 entities.append(entity)
         except Exception as e:
@@ -52,7 +52,7 @@ class TelegramVoiceBot:
             self.db.save_message(
                 sender_id=msg.sender_id,
                 message=msg.text, 
-                date=msg.date.isoformat(),
+                date=msg.date.strftime('%d.%m.%Y %H:%M'),
                 source=source,
                 filename=filename
             )
@@ -99,13 +99,16 @@ class TelegramVoiceBot:
 
             tts = gTTS(text=clean_text, lang=lang, slow=False)
             mp3_path = "voice.mp3"
-            ogg_path = f"voice_{int(time.time())}.ogg"
+            ogg_path = filename  # использовать заданное имя
 
+            # Генерация .mp3 и конвертация в .ogg
             tts.save(mp3_path)
             os.system(f'ffmpeg -y -i {mp3_path} -c:a libopus {ogg_path}')
 
             if not os.path.exists(ogg_path) or os.path.getsize(ogg_path) == 0:
                 print("❌ Файл ogg не создан или пустой!")
+                self.queue.task_done()
+                continue
             else:
                 print(f"✅ Файл ogg создан: {ogg_path}, размер: {os.path.getsize(ogg_path)} байт")
 
@@ -118,18 +121,20 @@ class TelegramVoiceBot:
                     caption=clean_text[:200]
                 )
                 print("📤 Отправлено в Telegram")
+            except Exception as e:
+                print(f"❌ Ошибка отправки в Telegram: {e}")
 
+            try:
                 # === Загрузка на сервер ===
                 with open(ogg_path, 'rb') as f:
-                    response = requests.post("http://localhost:5000/server/upload", files={'file': (ogg_path, f)})
+                    response = requests.post("http://localhost:5000/upload", files={'file': (filename, f)})
 
                 if response.status_code == 200:
                     print(f"🌍 Успешно отправлено на сервер: {response.text}")
                 else:
                     print(f"⚠️ Ошибка при загрузке на сервер: {response.status_code} — {response.text}")
-
             except Exception as e:
-                print(f"❌ Ошибка отправки: {e}")
+                print(f"❌ Ошибка при загрузке на сервер: {e}")
 
             finally:
                 for f in (mp3_path, ogg_path):
