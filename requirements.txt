@@ -1,8 +1,11 @@
 telethon
+python-telegram-bot
 gtts
 langdetect
 emoji
 pygame
 flask
 requests
-python-dotenv
+python-dotenvbot
+dotenv
+telegram

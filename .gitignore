@@ -20,3 +20,7 @@ delete_file_db.py
 *.ogg
 *.log
 .env
+tests/*.session
+tests/.pytest_cache
+merge_db.py
+.bat

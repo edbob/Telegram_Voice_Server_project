@@ -71,8 +71,8 @@ async function fetchMessages() {
     const container = document.getElementById('messages');
     const readMessages = getReadMessages();
 
-    shownMessages.clear();          // очищаем set
-    container.innerHTML = '';       // очищаем HTML
+    shownMessages.clear();
+    container.innerHTML = '';
 
     data.forEach((msg, index) => {
         if (shownMessages.has(msg.filename)) return;
@@ -80,9 +80,8 @@ async function fetchMessages() {
         const isRead = readMessages.includes(msg.filename);
 
         const div = document.createElement('div');
-        div.className = 'message ' + (isRead ? 'read' : 'unread');
+        div.className = 'message ' + (isRead ? 'read' : 'unread') + ' new';
 
-        // Формируем HTML
         let audioHTML = '';
         if (msg.url) {
             audioHTML = `<audio controls src="${msg.url}"></audio><br>`;
@@ -97,9 +96,8 @@ async function fetchMessages() {
             <span class="date">ID: ${msg.id} | Добавлено: ${msg.date} | Источник: ${msg.source || 'Неизвестно'}</span>
         `;
 
-        container.appendChild(div); // Добавляем в конец списка
+        container.appendChild(div);
 
-        // Обработчики
         const previewEl = div.querySelector('.preview');
         const fullEl = div.querySelector('.full-message');
         const audio = div.querySelector('audio');
@@ -111,20 +109,10 @@ async function fetchMessages() {
         });
 
         if (audio) {
-        // Добавляем в очередь, если сообщение не прочитано
             if (!isRead) {
                 audioQueue.push({ audio, filename: msg.filename, div });
             }
-            // Автовоспроизведение
-            if (index === 0 && !isRead && isAutoplayEnabled()) {
-                audio.play().then(() => {
-                    markAsRead(msg.filename);
-                    div.classList.remove('unread');
-                    div.classList.add('read');
-                }).catch(err => console.warn("Не удалось воспроизвести:", err));
-            }
 
-            // Ручное воспроизведение
             audio.addEventListener('play', () => {
                 if (!readMessages.includes(msg.filename)) {
                     markAsRead(msg.filename);
@@ -134,12 +122,21 @@ async function fetchMessages() {
             });
         }
 
-        // Помечаем как отображённое
         shownMessages.add(msg.filename);
     });
-    // Если ничего не играет — запускаем очередь
-    if (!isPlaying && audioQueue.length > 0) {
+
+    if (!isPlaying && audioQueue.length > 0 && isAutoplayEnabled()) {
         playNextInQueue();
+    }
+
+    // Убираем класс 'new' через 2 секунды, чтобы анимация не повторялась при перезагрузке
+    setTimeout(() => {
+        document.querySelectorAll('.message.new').forEach(el => el.classList.remove('new'));
+    }, 2000);
+
+    // Скроллим вниз, если включено автопроигрывание
+    if (isAutoplayEnabled()) {
+        container.scrollTop = container.scrollHeight;
     }
 }
 

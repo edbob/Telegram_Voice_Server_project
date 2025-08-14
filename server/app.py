@@ -7,6 +7,7 @@ from flask import Response
 from queue import Queue
 import sqlite3
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from bot.config import DB_URL
 from bot.processor import TextProcessor
 
 app = Flask(__name__, static_folder='static', template_folder='templates')

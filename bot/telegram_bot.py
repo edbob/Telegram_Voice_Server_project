@@ -2,7 +2,6 @@ import asyncio
 from telethon import TelegramClient
 import sys
 import os
-import asyncio
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from bot.bot_main import TelegramVoiceBot
 from bot.config import ADMIN_ID, PHONE, DB_URL, API_HASH, TARGET_CHAT
@@ -16,7 +15,6 @@ target_chat = TARGET_CHAT
 async def main():
     print("⏳ Получаю список каналов и групп через Telethon...")
 
-    # создаем временный клиент для получения названий
     client = TelegramClient('bot_session_temp', api_id, api_hash)
     await client.start(phone=phone)
 
@@ -33,20 +31,21 @@ async def main():
         print("⚠️ Каналы не найдены.")
         return
 
-    # выбор пользователем
     print("\n✅ Доступные каналы:")
     for idx, (title, ch_id) in enumerate(channel_infos):
         print(f"{idx+1}: {title} (ID: {ch_id})")
 
     try:
-        selected = int(input("Введите номер канала для прослушивания: ")) - 1
-        selected_channel_id = [channel_infos[selected][1]]
+        selected_input = input("Введите номера каналов для прослушивания (через запятую): ")
+        selected_indexes = [int(x.strip()) - 1 for x in selected_input.split(",")]
+        selected_channel_ids = [channel_infos[i][1] for i in selected_indexes]
     except (ValueError, IndexError):
-        print("❌ Некорректный выбор. Завершение.")
+        print("❌ Некорректный ввод. Завершение.")
         return
 
-    # запускаем основного бота
-    bot = TelegramVoiceBot(api_id, api_hash, phone, selected_channel_id, db_file, target_chat)
+    print(f"🎧 Выбранные каналы: {selected_channel_ids}")
+
+    bot = TelegramVoiceBot(api_id, api_hash, phone, selected_channel_ids, db_file, target_chat)
 
     try:
         await bot.start()

@@ -1,9 +1,11 @@
 import os
+import sys
 import asyncio
 import time
 from gtts import gTTS
 from telethon import TelegramClient, events
 from telethon.tl.types import PeerChannel
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from bot.db import MessageDB
 from bot.processor import TextProcessor
 import datetime
