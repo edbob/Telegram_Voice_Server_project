@@ -4,8 +4,8 @@ import re
 # ==== НАСТРОЙКИ ====
 WORK_DIRS = ["bot", "server", "."]  # Папки, которые считаются рабочими
 IGNORE_DIRS = ["__pycache__", ".git", ".venv"]
-SHOW_ONLY_FOLDER = ["uploads"]  # Эти папки показывать, но без содержимого
-OUTPUT_FILE = "struktur.txt"
+SHOW_ONLY_FOLDER = ["uploads", "icons"]  # Эти папки показывать, но без содержимого
+OUTPUT_FILE = "project_tree.txt"
 
 def get_file_comment(filepath):
     """Определяет комментарий по импортам в файле."""
@@ -32,7 +32,8 @@ def get_file_comment(filepath):
     return f"← {', '.join(comment_parts)}" if comment_parts else "← Python-скрипт"
 
 def build_tree(start_path="."):
-    tree_lines = []
+    project_name = os.path.basename(os.path.abspath(start_path))
+    tree_lines = [f"{project_name}/"]  # Добавляем название проекта в начало
 
     for root, dirs, files in os.walk(start_path):
         rel_path = os.path.relpath(root, start_path)
@@ -45,10 +46,11 @@ def build_tree(start_path="."):
             continue
         
         # Добавляем папку в дерево
-        level = rel_path.count(os.sep)
-        indent = "│   " * level
-        folder_name = os.path.basename(root) if rel_path != "." else "./"
-        tree_lines.append(f"{indent}├── {folder_name}/")
+        level = rel_path.count(os.sep) + 1  # +1 потому что проект — это 0 уровень
+        indent = "│   " * (level - 1)
+        folder_name = os.path.basename(root) if rel_path != "." else project_name
+        if rel_path != ".":
+            tree_lines.append(f"{indent}├── {folder_name}/")
 
         # Обрабатываем файлы
         for file in sorted(files):

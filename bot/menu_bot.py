@@ -71,6 +71,10 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("❌ Действие отменено.")
     return ConversationHandler.END
 
+def safe_print(text):
+    sys.stdout.write("\n" + text + "\n")
+    sys.stdout.flush()
+    
 def main():
     from telegram.ext import ApplicationBuilder
 
@@ -86,7 +90,8 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, process_action))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_admin_message))
 
-    print("🤖 Меню-бот запущен")
+    safe_print("🤖 Меню-бот запущен")
+    
     app.run_polling()
 
 if __name__ == '__main__':

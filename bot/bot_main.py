@@ -9,6 +9,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from bot.db import MessageDB
 from bot.processor import TextProcessor
 import datetime
+import pytz
+from config import TIM_EZONE
 
 class TelegramVoiceBot:
     def __init__(self, api_id, api_hash, phone, source_channels, db_file, target_chat):
@@ -49,12 +51,14 @@ class TelegramVoiceBot:
                 filename = f"voice_{int(time.time())}.ogg"
             except:
                 source = 'Неизвестно'
-
+                
+            kyiv_tz = pytz.timezone(TIM_EZONE)
+            local_date = msg.date.replace(tzinfo=pytz.utc).astimezone(kyiv_tz)
             # Сохраняем в базу
             self.db.save_message(
                 sender_id=msg.sender_id,
                 message=msg.text, 
-                date=msg.date.strftime('%d.%m.%Y %H:%M'),
+                date=local_date.strftime('%d.%m.%Y %H:%M'),
                 source=source,
                 filename=filename
             )
