@@ -6,6 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from bot.weather import get_weather
 from bot.config import ADMIN_ID, BOT_TOKEN, DB_URL
 from bot.db import MessageDB
+from stats import StatsProcessor
 
 ADMIN_CHAT_ID = ADMIN_ID
 # Состояние для отправки сообщения админу
@@ -33,15 +34,16 @@ async def process_action(action: str, update: Update, context: ContextTypes.DEFA
 
     elif action == 'stats':
         db = MessageDB(DB_URL)
+        statistik = StatsProcessor(db)
         text = "📊 Статистика по тревогам:\n\n"
         for period_name in ['day', 'week', 'month']:
-            stats = db.get_air_alert_stats(period_name)
+            stat = statistik.get_air_alert_stats(period_name)
             text += f"🗓 За {period_name}:\n"
-            text += f"  • Кол-во тревог: {stats['count']}\n"
-            text += f"  • Общая длительность: {stats['total_minutes']} мин\n"
-            text += f"  • Средняя длительность: {stats['avg_minutes']} мин\n"
-            text += f"  • Последняя тревога: {stats['last_alert']}\n"
-            text += f"  • Последний отбой: {stats['last_clear']}\n\n"
+            text += f"  • Кол-во тревог: {stat['count']}\n"
+            text += f"  • Общая длительность: {stat['total_minutes']} мин\n"
+            text += f"  • Средняя длительность: {stat['avg_minutes']} мин\n"
+            text += f"  • Последняя тревога: {stat['last_alert']}\n"
+            text += f"  • Последний отбой: {stat['last_clear']}\n\n"
 
         await update.message.reply_text(text)
 
