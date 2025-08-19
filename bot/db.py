@@ -1,3 +1,4 @@
+# db.py
 import sqlite3
 
 class MessageDB:
@@ -51,13 +52,13 @@ class MessageDB:
         ''', (chat_id, user_id, action))
         self.conn.commit()
 
-    def get_messages_between(self, start_date, end_date):
+    # НОВОЕ: берём все сообщения и сортируем по id (а не по date)
+    def get_all_messages(self):
         cursor = self.conn.cursor()
         cursor.execute("""
             SELECT id, message, date FROM messages
-            WHERE date BETWEEN ? AND ?
-            ORDER BY date ASC
-        """, (start_date, end_date))
+            ORDER BY id ASC
+        """)
         return cursor.fetchall()
 
     def close(self):

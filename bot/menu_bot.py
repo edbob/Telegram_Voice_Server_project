@@ -7,6 +7,9 @@ from bot.weather import get_weather
 from bot.config import ADMIN_ID, BOT_TOKEN, DB_URL
 from bot.db import MessageDB
 from stats import StatsProcessor
+from aiogram import Bot, Dispatcher, types
+from aiogram.types import InputFile
+from stats import plot_alerts_per_day
 
 ADMIN_CHAT_ID = ADMIN_ID
 # Состояние для отправки сообщения админу
@@ -46,6 +49,10 @@ async def process_action(action: str, update: Update, context: ContextTypes.DEFA
             text += f"  • Последний отбой: {stat['last_clear']}\n\n"
 
         await update.message.reply_text(text)
+        
+        alerts = statistik.get_alerts_per_day(days=7)
+        filename = plot_alerts_per_day(alerts)
+        await context.bot.send_photo(chat_id=update.effective_chat.id, photo=open(filename, "rb"))
 
     elif action == 'advertise':
         await update.message.reply_text("📢 Размещение рекламы стоит 100₴. Напиши 'Да', чтобы подтвердить.")
