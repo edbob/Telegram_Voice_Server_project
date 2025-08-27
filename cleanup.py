@@ -6,10 +6,7 @@ from datetime import datetime, timedelta
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Папки, которые нужно очищать
-FOLDERS = [
-    os.path.join(BASE_DIR, 'server', 'static', 'voice'),
-    os.path.join(BASE_DIR, 'server', 'uploads')
-]
+FOLDERS = [os.path.join(BASE_DIR, 'server', 'uploads')]
 
 # Максимальный возраст файлов (в секундах): 7 дней = 604800
 MAX_FILE_AGE = 7 * 24 * 60 * 60

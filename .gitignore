@@ -25,3 +25,7 @@ tests/.pytest_cache
 merge_db.py
 .bat
 stats.png
+node_modules
+dist
+package-lock.json
+package.json

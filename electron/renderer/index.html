@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Telegram Voice Server</title>
+  <link rel="stylesheet" href="style.css"/>
+  <script>
+    // Проверим ping
+    window.api.ping().then((resp) => {
+      console.log(resp); // "pong 🏓 от main.js!"
+    });
+
+    // Отправим сообщение в main
+    window.api.sendMessage("log-message", "Привет от фронтенда!");
+
+    // Подпишемся на события
+    window.api.onMessage("update-data", (data) => {
+      console.log("Пришли данные из main:", data);
+    });
+</script>
+</head>
+<body>
+  <h1>⚙️ Настройка</h1>
+  <form id="cfg">
+    <div class="grid">
+      <label>BOT_TOKEN <input name="BOT_TOKEN" required></label>
+      <label>ADMIN_ID <input name="ADMIN_ID" type="number"></label>
+      <label>API_ID <input name="API_ID" type="number"></label>
+      <label>API_HASH <input name="API_HASH"></label>
+      <label>OpenWeatherMap_API_KEY <input name="OpenWeatherMap_API_KEY"></label>
+      <label>PHONE <input name="PHONE"></label>
+      <label>DB_URL <input name="DB_URL" placeholder="messages.db"></label>
+      <label>TARGET_CHAT <input name="TARGET_CHAT"></label>
+      <label>UPLOAD_URL <input name="UPLOAD_URL"></label>
+      <label>TIMEZONE <input name="TIMEZONE" value="Europe/Kyiv"></label>
+      <label>BOT_NAME <input name="BOT_NAME" value="MyBot"></label>
+    </div>
+    <div class="row">
+      <button type="submit">💾 Сохранить</button>
+      <button id="start" type="button">▶️ Запустить</button>
+      <button id="stop"  type="button">⏹ Остановить</button>
+      <button id="openflask" type="button">🌐 Открыть http://127.0.0.1:5000</button>
+    </div>
+  </form>
+
+  <h2>🖥 Логи</h2>
+  <pre id="log"></pre>
+
+  <script src="index.js"></script>
+</body>
+</html>

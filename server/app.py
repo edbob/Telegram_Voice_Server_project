@@ -6,8 +6,12 @@ from datetime import datetime
 from flask import Response
 from queue import Queue
 import sqlite3
+import io
+import threading
+import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from bot.config import DB_URL
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+from cleanup import cleanup
 from bot.processor import TextProcessor
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
@@ -16,6 +20,12 @@ UPLOAD_FOLDER = os.path.join(app.root_path, 'uploads')
 
 # Убедимся, что нужные папки существуют
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def background_cleanup():
+    while True:
+        print("🧹 Автоочистка старых файлов...")
+        cleanup()
+        time.sleep(24 * 60 * 60)  # раз в сутки
 
 @app.route('/manifest.json')
 def manifest():
@@ -52,7 +62,6 @@ def get_messages():
         c.execute('''
             SELECT id, filename, message, date, source 
             FROM messages 
-            WHERE filename IS NOT NULL AND filename != ''
             ORDER BY id DESC 
             LIMIT 10
         ''')
@@ -63,21 +72,39 @@ def get_messages():
     messages = []
     for row in rows:
         filename = row['filename']
-        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        file_path = None
+        need_update_db = False
 
-        file_exists = filename and os.path.exists(file_path)
+        # если в базе нет имени файла → создаём новое
+        if not filename:
+            filename = f"voice_{row['id']}.mp3"
+            file_path = os.path.join(UPLOAD_FOLDER, filename)
+            need_update_db = True
+        else:
+            file_path = os.path.join(UPLOAD_FOLDER, filename)
 
-        if not file_exists:
+        # если файл не существует → озвучиваем
+        if not os.path.exists(file_path):
             print(f"⚠️ Файл не найден: {filename}. Озвучиваем сообщение заново.")
             try:
                 from gtts import gTTS
                 text = row['message'] or ''
                 tts = gTTS(text, lang='ru')
                 tts.save(file_path)
-                file_exists = True
                 print(f"✅ Файл озвучен и сохранён: {file_path}")
+                need_update_db = True
             except Exception as e:
                 print(f"❌ Ошибка озвучивания: {e}")
+
+        # если создали новый файл — обновим базу
+        if need_update_db:
+            try:
+                conn = sqlite3.connect(DB_PATH)
+                conn.execute("UPDATE messages SET filename = ? WHERE id = ?", (filename, row['id']))
+                conn.commit()
+                conn.close()
+            except Exception as e:
+                print(f"❌ Ошибка обновления базы: {e}")
 
         # Используем дату только из базы!
         created = row['date'] or 'Неизвестно'
@@ -92,13 +119,13 @@ def get_messages():
 
         messages.append({
             'id': row['id'],
-            'filename': filename if file_exists else None,
-            'url': f'/server/uploads/{filename}' if file_exists else None,
+            'filename': filename if os.path.exists(file_path) else None,
+            'url': f'/server/uploads/{filename}' if os.path.exists(file_path) else None,
             'date': created,
             'source': row['source'] or "Неизвестно",
             'preview': preview,
             'full_message': full_message,
-            'has_audio': file_exists
+            'has_audio': os.path.exists(file_path)
         })
 
     return jsonify(messages)
@@ -138,4 +165,5 @@ def upload_file():
     return 'Файл получен', 200
 
 if __name__ == "__main__":
+    threading.Thread(target=background_cleanup, daemon=True).start()
     app.run(debug=True)
